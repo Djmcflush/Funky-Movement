@@ -2,6 +2,8 @@
 Adversarial Attacks on Human Action Recognition Networks
 
 Human Action GAN
+This repo implements an updated version of the code behind HP-GAN paper (https://arxiv.org/abs/1711.09561)
+
 https://github.com/ebarsoum/hpgan
 @article{BarsoumCVPRW2018,
   author = {Emad Barsoum and John Kender and Zicheng Liu},
