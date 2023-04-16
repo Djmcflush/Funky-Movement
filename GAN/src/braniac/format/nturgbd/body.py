@@ -33,8 +33,7 @@ class BodyFileReader(object):
         '''
         Iterate through each frame in the file, each frame can have more than one body.
         '''
-        for frame in self.frames:
-            yield frame
+        yield from self.frames
 
     def __getitem__(self, key):
         '''

@@ -124,7 +124,7 @@ def openpose_match(data_numpy):
     assert(C==3)
     score = data_numpy[2,:,:,:].sum(axis=1)
     # the rank of body confidence in each frame (shape: T-1, M)
-    rank = (-score[0:T-1]).argsort(axis = 1).reshape(T-1, M)
+    rank = (-score[:T-1]).argsort(axis = 1).reshape(T-1, M)
 
     # data of frame 1
     xy1 = data_numpy[0:2, 0:T-1, :, :].reshape(2, T-1, V, M, 1)
@@ -147,7 +147,7 @@ def openpose_match(data_numpy):
     # string data
     for t in range(T-1):
         forward_map[t+1] = forward_map[t+1][forward_map[t]]
-    
+
     # generate data
     new_data_numpy = np.zeros(data_numpy.shape)
     for t in range(T):

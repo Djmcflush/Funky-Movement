@@ -252,8 +252,14 @@ class Body(object):
         bone_ends = np.array([2, 3, 4, 7, 8, 9, 13, 14, 15, 16, 18, 19, 20, 26, 27, 28]) - 1
 
         self._bones = []
-        for i in range(len(bone_starts)):
-            self._bones.append((bone_starts[i], bone_ends[i], self._location_name(bone_starts[i], bone_ends[i])))
+        self._bones.extend(
+            (
+                bone_starts[i],
+                bone_ends[i],
+                self._location_name(bone_starts[i], bone_ends[i]),
+            )
+            for i in range(len(bone_starts))
+        )
 
     @property
     def joint_count(self):

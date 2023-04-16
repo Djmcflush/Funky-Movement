@@ -43,14 +43,18 @@ class unit_gcn(nn.Module):
         self.use_local_bn = use_local_bn
         # ==========================================
 
-        self.conv_list = nn.ModuleList([
-            nn.Conv2d(
-                self.in_channels,
-                self.out_channels,
-                kernel_size=(kernel_size, 1),
-                padding=(int((kernel_size - 1) / 2), 0),
-                stride=(stride, 1)) for i in range(self.num_A)
-        ])
+        self.conv_list = nn.ModuleList(
+            [
+                nn.Conv2d(
+                    self.in_channels,
+                    self.out_channels,
+                    kernel_size=(kernel_size, 1),
+                    padding=(int((kernel_size - 1) / 2), 0),
+                    stride=(stride, 1),
+                )
+                for _ in range(self.num_A)
+            ]
+        )
 
         if mask_learning:
             self.mask = nn.Parameter(torch.ones(self.A.size()))
@@ -78,11 +82,7 @@ class unit_gcn(nn.Module):
         for i, a in enumerate(A):
             xa = x.view(-1, V).mm(a).view(N, C, T, V)
 
-            if i == 0:
-                y = self.conv_list[i](xa)
-            else:
-                y = y + self.conv_list[i](xa)
-
+            y = self.conv_list[i](xa) if i == 0 else y + self.conv_list[i](xa)
         # batch normalization
         if self.use_local_bn:
             y = y.permute(0, 1, 3, 2).contiguous().view(

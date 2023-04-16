@@ -77,7 +77,7 @@ class DataPreprocessing:
         elif self._normalization_mode == NormalizationMode.MinAndMax:
             norm = self._min_max_normalize(inputs)
         elif self._normalization_mode == NormalizationMode.External:
-            if self._normalizer == None:
+            if self._normalizer is None:
                 raise Exception('Normalizer is missing.')
             norm = self._normalizer.normalize(inputs)
 
@@ -98,10 +98,10 @@ class DataPreprocessing:
         elif self._normalization_mode == NormalizationMode.MinAndMax:
             unnorm = self._min_max_unnormalize(inputs)
         elif self._normalization_mode == NormalizationMode.External:
-            if self._normalizer == None:
+            if self._normalizer is None:
                 raise Exception('Normalizer is missing.')
             unnorm = self._normalizer.unnormalize(inputs)
-        
+
         return unnorm
 
     def _mean_std_normalize(self, inputs, std_factor=1.0):

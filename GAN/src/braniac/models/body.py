@@ -36,14 +36,11 @@ class RNNDiscriminator(object):
         self._output_dims = 1
         self._output_category_dims = output_category_dims
         self._output = None
-        self._output_category = None        
+        self._output_category = None
         self._prob = None
         self._parameters = []
         self._weights = []
-        if scope.strip() == "":
-            self._scope = scope
-        else:
-            self._scope = scope + "/"
+        self._scope = scope if scope.strip() == "" else f"{scope}/"
         self._build(inputs)
 
     @property
@@ -118,7 +115,9 @@ class RNNDiscriminator(object):
             # self._output = tf.matmul(last, Wo) + bo
             self._prob = tf.nn.sigmoid(self._output)
 
-            self._parameters = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=vs.name+'/')
+            self._parameters = tf.get_collection(
+                tf.GraphKeys.TRAINABLE_VARIABLES, scope=f'{vs.name}/'
+            )
             self._weights = [v for v in self._parameters if (v.name.endswith('Wi:0') or v.name.endswith('weights:0') or v.name.endswith('Wo:0'))]
 
 class NNResidualDiscriminator(object):
@@ -163,11 +162,7 @@ class NNResidualDiscriminator(object):
         self._prob = None
         self._parameters = []
         self._weights = []
-        if scope.strip() == "":
-            self._scope = scope
-        else:
-            self._scope = scope + "/"
-
+        self._scope = scope if scope.strip() == "" else f"{scope}/"
         self._build(inputs)
 
     @property
@@ -197,16 +192,20 @@ class NNResidualDiscriminator(object):
         Args:
             inputs: input to the resnet unit.
         '''
-        net1 = tf.layers.dense(inputs=inputs,
-                               units=self._num_neurons,
-                               activation=self._activation, 
-                               name="resnet1_{}".format(residual_index+1), 
-                               reuse=self._reuse)
-        net2 = tf.layers.dense(inputs=net1,
-                               units=inputs.shape[-1],
-                               activation=None, 
-                               name="resnet2_{}".format(residual_index+1), 
-                               reuse=self._reuse)
+        net1 = tf.layers.dense(
+            inputs=inputs,
+            units=self._num_neurons,
+            activation=self._activation,
+            name=f"resnet1_{residual_index + 1}",
+            reuse=self._reuse,
+        )
+        net2 = tf.layers.dense(
+            inputs=net1,
+            units=inputs.shape[-1],
+            activation=None,
+            name=f"resnet2_{residual_index + 1}",
+            reuse=self._reuse,
+        )
         return  self._activation(net2 + inputs)
 
     def _build(self, inputs):
@@ -230,18 +229,17 @@ class NNResidualDiscriminator(object):
                                   name="fc1", 
                                   reuse=self._reuse)
 
-            residual_index = 0
-            for _ in range(self._num_residual_blocks):
+            for residual_index, _ in enumerate(range(self._num_residual_blocks)):
                 net = self._build_residual_unit(net, residual_index)
-                residual_index += 1
-
             self._output = tf.layers.dense(inputs=net, 
                                            units=self._output_dims, 
                                            name="fc2", 
                                            reuse=self._reuse)
             self._prob = tf.nn.sigmoid(self._output)
 
-            self._parameters = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=vs.name+'/')
+            self._parameters = tf.get_collection(
+                tf.GraphKeys.TRAINABLE_VARIABLES, scope=f'{vs.name}/'
+            )
             self._weights = [v for v in self._parameters if (v.name.endswith('Wi:0') or v.name.endswith('weights:0') or v.name.endswith('kernel:0'))]
 
 class NNDiscriminator(object):
@@ -272,11 +270,7 @@ class NNDiscriminator(object):
         self._parameters = []
         self._weights = []
         self._stddev = 0.001
-        if scope.strip() == "":
-            self._scope = scope
-        else:
-            self._scope = scope + "/"
-
+        self._scope = scope if scope.strip() == "" else f"{scope}/"
         self._build(inputs)
 
     @property
@@ -317,14 +311,27 @@ class NNDiscriminator(object):
 
             layer_index = 0
             for _ in range(self._num_layers):
-                net = tf.layers.dense(inputs=net, units=self._num_neurons, activation=tf.nn.relu, name="fc{}".format(layer_index+1), reuse=self._reuse)
+                net = tf.layers.dense(
+                    inputs=net,
+                    units=self._num_neurons,
+                    activation=tf.nn.relu,
+                    name=f"fc{layer_index + 1}",
+                    reuse=self._reuse,
+                )
                 # net = tf.layers.dropout(inputs=net, rate=0.5)
                 layer_index += 1
 
-            self._output = tf.layers.dense(inputs=net, units=self._output_dims, name="fc{}".format(layer_index+1), reuse=self._reuse)
+            self._output = tf.layers.dense(
+                inputs=net,
+                units=self._output_dims,
+                name=f"fc{layer_index + 1}",
+                reuse=self._reuse,
+            )
             self._prob = tf.nn.sigmoid(self._output)
 
-            self._parameters = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=vs.name+'/')
+            self._parameters = tf.get_collection(
+                tf.GraphKeys.TRAINABLE_VARIABLES, scope=f'{vs.name}/'
+            )
             self._weights = [v for v in self._parameters if (v.name.endswith('Wi:0') or v.name.endswith('weights:0') or v.name.endswith('kernel:0'))]
 
 class RNNGenerator(object):
@@ -399,7 +406,9 @@ class RNNGenerator(object):
             pred = tf.reshape(pred, pred.shape[:1].as_list() + [1] + self._inputs_shape[2:].as_list())
 
             self._output = tf.tanh(pred)
-            self._parameters = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=vs.name+'/')
+            self._parameters = tf.get_collection(
+                tf.GraphKeys.TRAINABLE_VARIABLES, scope=f'{vs.name}/'
+            )
             self._weights = [v for v in self._parameters if (v.name.endswith('Wi:0') or v.name.endswith('weights:0') or v.name.endswith('Wo:0'))]
 
 class NNGenerator(object):
@@ -468,7 +477,9 @@ class NNGenerator(object):
             pred = tf.reshape(pred, pred.shape[:1].as_list() + [1] + self._inputs_shape[2:].as_list())
 
             self._output = tf.tanh(pred)
-            self._parameters = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=vs.name+'/')
+            self._parameters = tf.get_collection(
+                tf.GraphKeys.TRAINABLE_VARIABLES, scope=f'{vs.name}/'
+            )
             self._weights = [v for v in self._parameters if (v.name.endswith('Wi:0') or v.name.endswith('weights:0') or v.name.endswith('kernel:0'))]
 
 class SequenceToSequenceGenerator(object):
@@ -566,14 +577,16 @@ class SequenceToSequenceGenerator(object):
                                              bias_initializer=self._bias_initializer)
             self._output = self._build_decoder(first_input, z, encoder_state)
 
-            self._parameters = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=vs.name+'/')
+            self._parameters = tf.get_collection(
+                tf.GraphKeys.TRAINABLE_VARIABLES, scope=f'{vs.name}/'
+            )
             self._weights = [v for v in self._parameters if (v.name.endswith('Wi:0') or \
-                                                             v.name.endswith('weights:0') or \
-                                                             v.name.endswith('Wo:0') or \
-                                                             v.name.endswith('Wsi:0') or \
-                                                             ('Wzi' in v.name) or \
-                                                             ('Wzci' in v.name) or \
-                                                             ('Wzhi' in v.name))]
+                                                                 v.name.endswith('weights:0') or \
+                                                                 v.name.endswith('Wo:0') or \
+                                                                 v.name.endswith('Wsi:0') or \
+                                                                 ('Wzi' in v.name) or \
+                                                                 ('Wzci' in v.name) or \
+                                                                 ('Wzhi' in v.name))]
 
     def _create_rnn_model(self):
         ''' Create RNN model '''
@@ -591,21 +604,25 @@ class SequenceToSequenceGenerator(object):
             layer_index = 0
             num_neurons = self._num_neurons // (self._num_nn_layers+1)
             for i in range(self._num_nn_layers):
-                net = tf.layers.dense(inputs=net, 
-                                      units=(i+1)*num_neurons,
-                                      kernel_initializer=self._kernel_initializer,
-                                      bias_initializer=self._bias_initializer,
-                                      activation=tf.nn.relu,
-                                      name="fc{}".format(layer_index+1))
+                net = tf.layers.dense(
+                    inputs=net,
+                    units=(i + 1) * num_neurons,
+                    kernel_initializer=self._kernel_initializer,
+                    bias_initializer=self._bias_initializer,
+                    activation=tf.nn.relu,
+                    name=f"fc{layer_index + 1}",
+                )
                 # net = tf.layers.dropout(inputs=net, rate=0.5)
                 layer_index += 1
 
-            encoder_inputs = tf.layers.dense(inputs=net, 
-                                             units=self._num_neurons,
-                                             kernel_initializer=self._kernel_initializer,
-                                             bias_initializer=self._bias_initializer,
-                                             activation=None, 
-                                             name="fc{}".format(layer_index+1))
+            encoder_inputs = tf.layers.dense(
+                inputs=net,
+                units=self._num_neurons,
+                kernel_initializer=self._kernel_initializer,
+                bias_initializer=self._bias_initializer,
+                activation=None,
+                name=f"fc{layer_index + 1}",
+            )
             encoder_inputs.set_shape([inputs.shape[0].value, inputs.shape[1].value, self._num_neurons])
         else:
             Wi = tf.get_variable("Wi", shape=[np.prod(self._element_shape), self._inputs_depth], initializer=self._kernel_initializer)
@@ -624,24 +641,27 @@ class SequenceToSequenceGenerator(object):
             net = outputs
             layer_index = 0
             for i in range(self._num_nn_layers):
-                net = tf.layers.dense(inputs=net, 
-                                      units=int(self._num_neurons/(i+1)),
-                                      kernel_initializer=self._kernel_initializer,
-                                      bias_initializer=self._bias_initializer,
-                                      activation=tf.nn.relu, 
-                                      name="fc{}".format(layer_index+1))
+                net = tf.layers.dense(
+                    inputs=net,
+                    units=int(self._num_neurons / (i + 1)),
+                    kernel_initializer=self._kernel_initializer,
+                    bias_initializer=self._bias_initializer,
+                    activation=tf.nn.relu,
+                    name=f"fc{layer_index + 1}",
+                )
                 # net = tf.layers.dropout(inputs=net, rate=0.5)
                 layer_index += 1
 
-            pred = tf.layers.dense(inputs=net, 
-                                   units=np.prod(self._element_shape),
-                                   kernel_initializer=self._kernel_initializer,
-                                   bias_initializer=self._bias_initializer,
-                                   activation=None, 
-                                   name="fc{}".format(layer_index+1))
+            pred = tf.layers.dense(
+                inputs=net,
+                units=np.prod(self._element_shape),
+                kernel_initializer=self._kernel_initializer,
+                bias_initializer=self._bias_initializer,
+                activation=None,
+                name=f"fc{layer_index + 1}",
+            )
 
             pred.set_shape([outputs.shape[0].value, self._output_sequence_length, np.prod(self._element_shape)])
-            pred = tf.reshape(pred, shape=[-1, pred.shape[1].value] + self._inputs_shape[2:].as_list())
         else:
             Wo = tf.get_variable("Wo", shape=[self._num_neurons, np.prod(self._element_shape)], initializer=self._kernel_initializer)
             bo = tf.get_variable("bo", shape=[np.prod(self._element_shape)], initializer=self._bias_initializer)
@@ -649,8 +669,7 @@ class SequenceToSequenceGenerator(object):
             pred = tf.tensordot(outputs, Wo, axes=[[2], [0]])
             pred.set_shape([outputs.shape[0].value, self._output_sequence_length, np.prod(self._element_shape)]) # https://github.com/tensorflow/tensorflow/issues/6682
             pred = pred + bo
-            pred = tf.reshape(pred, shape=[-1, pred.shape[1].value] + self._inputs_shape[2:].as_list())
-
+        pred = tf.reshape(pred, shape=[-1, pred.shape[1].value] + self._inputs_shape[2:].as_list())
         return pred
 
     def _build_encoder(self, inputs, z):

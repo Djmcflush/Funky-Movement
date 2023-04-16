@@ -77,20 +77,20 @@ def get_parser():
         help='the number of worker for data loader')
     parser.add_argument(
         '--train-feeder-args',
-        default=dict(),
-        help='the arguments of data loader for training')
+        default={},
+        help='the arguments of data loader for training',
+    )
     parser.add_argument(
         '--test-feeder-args',
-        default=dict(),
-        help='the arguments of data loader for test')
+        default={},
+        help='the arguments of data loader for test',
+    )
 
     # model
     parser.add_argument('--model', default=None, help='the model will be used')
     parser.add_argument(
-        '--model-args',
-        type=dict,
-        default=dict(),
-        help='the arguments of model')
+        '--model-args', type=dict, default={}, help='the arguments of model'
+    )
     parser.add_argument(
         '--weights',
         default=None,
@@ -157,7 +157,7 @@ class Processor():
 
     def load_data(self):
         Feeder = import_class(self.arg.feeder)
-        self.data_loader = dict()
+        self.data_loader = {}
         if self.arg.phase == 'train':
             self.data_loader['train'] = torch.utils.data.DataLoader(
                 dataset=Feeder(**self.arg.train_feeder_args),
@@ -179,7 +179,7 @@ class Processor():
         self.loss = nn.CrossEntropyLoss().cuda(output_device)
 
         if self.arg.weights:
-            self.print_log('Load weights from {}.'.format(self.arg.weights))
+            self.print_log(f'Load weights from {self.arg.weights}.')
             if '.pkl' in self.arg.weights:
                 with open(self.arg.weights, 'r') as f:
                     weights = pickle.load(f)
@@ -192,9 +192,9 @@ class Processor():
 
             for w in self.arg.ignore_weights:
                 if weights.pop(w, None) is not None:
-                    self.print_log('Sucessfully Remove Weights: {}.'.format(w))
+                    self.print_log(f'Sucessfully Remove Weights: {w}.')
                 else:
-                    self.print_log('Can Not Remove Weights: {}.'.format(w))
+                    self.print_log(f'Can Not Remove Weights: {w}.')
 
             try:
                 self.model.load_state_dict(weights)
@@ -203,16 +203,15 @@ class Processor():
                 diff = list(set(state.keys()).difference(set(weights.keys())))
                 print('Can not find these weights:')
                 for d in diff:
-                    print('  ' + d)
+                    print(f'  {d}')
                 state.update(weights)
                 self.model.load_state_dict(state)
 
-        if type(self.arg.device) is list:
-            if len(self.arg.device) > 1:
-                self.model = nn.DataParallel(
-                    self.model,
-                    device_ids=self.arg.device,
-                    output_device=output_device)
+        if type(self.arg.device) is list and len(self.arg.device) > 1:
+            self.model = nn.DataParallel(
+                self.model,
+                device_ids=self.arg.device,
+                output_device=output_device)
 
     def load_optimizer(self):
         if self.arg.optimizer == 'SGD':
@@ -236,30 +235,29 @@ class Processor():
         arg_dict = vars(self.arg)
         if not os.path.exists(self.arg.work_dir):
             os.makedirs(self.arg.work_dir)
-        with open('{}/config.yaml'.format(self.arg.work_dir), 'w') as f:
+        with open(f'{self.arg.work_dir}/config.yaml', 'w') as f:
             yaml.dump(arg_dict, f)
 
     def adjust_learning_rate(self, epoch):
-        if self.arg.optimizer == 'SGD' or self.arg.optimizer == 'Adam':
-            lr = self.arg.base_lr * (
-                0.1**np.sum(epoch >= np.array(self.arg.step)))
-            for param_group in self.optimizer.param_groups:
-                param_group['lr'] = lr
-            return lr
-        else:
+        if self.arg.optimizer not in ['SGD', 'Adam']:
             raise ValueError()
+        lr = self.arg.base_lr * (
+            0.1**np.sum(epoch >= np.array(self.arg.step)))
+        for param_group in self.optimizer.param_groups:
+            param_group['lr'] = lr
+        return lr
 
     def print_time(self):
         localtime = time.asctime(time.localtime(time.time()))
-        self.print_log("Local current time :  " + localtime)
+        self.print_log(f"Local current time :  {localtime}")
 
     def print_log(self, str, print_time=True):
         if print_time:
             localtime = time.asctime(time.localtime(time.time()))
-            str = "[ " + localtime + ' ] ' + str
+            str = f"[ {localtime} ] {str}"
         print(str)
         if self.arg.print_log:
-            with open('{}/log.txt'.format(self.arg.work_dir), 'a') as f:
+            with open(f'{self.arg.work_dir}/log.txt', 'a') as f:
                 print(str, file=f)
 
     def record_time(self):
@@ -273,7 +271,7 @@ class Processor():
 
     def train(self, epoch, save_model=False):
         self.model.train()
-        self.print_log('Training epoch: {}'.format(epoch + 1))
+        self.print_log(f'Training epoch: {epoch + 1}')
         loader = self.data_loader['train']
         lr = self.adjust_learning_rate(epoch)
         loss_value = []
@@ -319,8 +317,7 @@ class Processor():
                 **proportion))
 
         if save_model:
-            model_path = '{}/epoch{}_model.pt'.format(self.arg.work_dir,
-                                                      epoch + 1)
+            model_path = f'{self.arg.work_dir}/epoch{epoch + 1}_model.pt'
             state_dict = self.model.state_dict()
             weights = OrderedDict([[k.split('module.')[-1],
                                     v.cpu()] for k, v in state_dict.items()])
@@ -328,11 +325,11 @@ class Processor():
 
     def eval(self, epoch, save_score=False, loader_name=['test']):
         self.model.eval()
-        self.print_log('Eval epoch: {}'.format(epoch + 1))
+        self.print_log(f'Eval epoch: {epoch + 1}')
         for ln in loader_name:
             loss_value = []
             score_frag = []
-            for batch_idx, (data, label) in enumerate(self.data_loader[ln]):
+            for data, label in self.data_loader[ln]:
                 data = Variable(
                     data.float().cuda(self.output_device),
                     requires_grad=False,
@@ -348,20 +345,20 @@ class Processor():
             score = np.concatenate(score_frag)
             score_dict = dict(
                 zip(self.data_loader[ln].dataset.sample_name, score))
-            self.print_log('\tMean {} loss of {} batches: {}.'.format(
-                ln, len(self.data_loader[ln]), np.mean(loss_value)))
+            self.print_log(
+                f'\tMean {ln} loss of {len(self.data_loader[ln])} batches: {np.mean(loss_value)}.'
+            )
             for k in self.arg.show_topk:
                 self.print_log('\tTop{}: {:.2f}%'.format(
                     k, 100 * self.data_loader[ln].dataset.top_k(score, k)))
 
             if save_score:
-                with open('{}/epoch{}_{}_score.pkl'.format(
-                        self.arg.work_dir, epoch + 1, ln), 'w') as f:
+                with open(f'{self.arg.work_dir}/epoch{epoch + 1}_{ln}_score.pkl', 'w') as f:
                     pickle.dump(score_dict, f)
 
     def start(self):
         if self.arg.phase == 'train':
-            self.print_log('Parameters:\n{}\n'.format(str(vars(self.arg))))
+            self.print_log(f'Parameters:\n{vars(self.arg)}\n')
             for epoch in range(self.arg.start_epoch, self.arg.num_epoch):
                 save_model = ((epoch + 1) % self.arg.save_interval == 0) or (
                     epoch + 1 == self.arg.num_epoch)
@@ -375,15 +372,12 @@ class Processor():
                         epoch,
                         save_score=self.arg.save_score,
                         loader_name=['test'])
-                else:
-                    pass
-
         elif self.arg.phase == 'test':
             if self.arg.weights is None:
                 raise ValueError('Please appoint --weights.')
             self.arg.print_log = False
-            self.print_log('Model:   {}.'.format(self.arg.model))
-            self.print_log('Weights: {}.'.format(self.arg.weights))
+            self.print_log(f'Model:   {self.arg.model}.')
+            self.print_log(f'Weights: {self.arg.weights}.')
             self.eval(
                 epoch=0, save_score=self.arg.save_score, loader_name=['test'])
             self.print_log('Done.\n')
@@ -417,7 +411,7 @@ if __name__ == '__main__':
         key = vars(p).keys()
         for k in default_arg.keys():
             if k not in key:
-                print('WRONG ARG: {}'.format(k))
+                print(f'WRONG ARG: {k}')
                 assert (k in key)
         parser.set_defaults(**default_arg)
 

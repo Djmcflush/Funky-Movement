@@ -65,10 +65,9 @@ class Model(nn.Module):
 
         if graph is None:
             raise ValueError()
-        else:
-            Graph = import_class(graph)
-            self.graph = Graph(**graph_args)
-            self.A = torch.from_numpy(self.graph.A).float().cuda(0)
+        Graph = import_class(graph)
+        self.graph = Graph(**graph_args)
+        self.A = torch.from_numpy(self.graph.A).float().cuda(0)
 
         self.num_class = num_class
         self.use_data_bn = use_data_bn
@@ -89,11 +88,7 @@ class Model(nn.Module):
             dropout=dropout,
             kernel_size=temporal_kernel_size)
 
-        if self.multiscale:
-            unit = TCN_GCN_unit_multiscale
-        else:
-            unit = TCN_GCN_unit
-
+        unit = TCN_GCN_unit_multiscale if self.multiscale else TCN_GCN_unit
         # backbone
         if backbone_config is None:
             backbone_config = default_backbone
