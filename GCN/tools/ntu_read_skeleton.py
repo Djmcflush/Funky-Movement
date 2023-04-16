@@ -4,14 +4,10 @@ import os
 
 def read_skeleton(file):
     with open(file, 'r') as f:
-        skeleton_sequence = {}
-        skeleton_sequence['numFrame'] = int(f.readline())
-        skeleton_sequence['frameInfo'] = []
-        for t in range(skeleton_sequence['numFrame']):
-            frame_info = {}
-            frame_info['numBody'] = int(f.readline())
-            frame_info['bodyInfo'] = []
-            for m in range(frame_info['numBody']):
+        skeleton_sequence = {'numFrame': int(f.readline()), 'frameInfo': []}
+        for _ in range(skeleton_sequence['numFrame']):
+            frame_info = {'numBody': int(f.readline()), 'bodyInfo': []}
+            for _ in range(frame_info['numBody']):
                 body_info = {}
                 body_info_key = [
                     'bodyID', 'clipedEdges', 'handLeftConfidence',
@@ -48,8 +44,6 @@ def read_xyz(file, max_body=2, num_joint=25):
             for j, v in enumerate(b['jointInfo']):
                 if m < max_body and j < num_joint:
                     data[:, n, j, m] = [v['x'], v['y'], v['z']]
-                else:
-                    pass
     return data
 
 

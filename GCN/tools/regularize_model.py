@@ -20,5 +20,5 @@ if __name__ == '__main__':
         'ntuxsub-tcn.pt', 'ntuxview-st_gcn.pt', 'ntuxview-tcn.pt'
     ]
     for m in model:
-        model_path = './model/{}'.format(m)
+        model_path = f'./model/{m}'
         main(model_path)

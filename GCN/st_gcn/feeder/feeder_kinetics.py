@@ -72,7 +72,7 @@ class Feeder_kinetics(torch.utils.data.Dataset):
         self.sample_name = os.listdir(self.data_path)
 
         if self.debug:
-            self.sample_name = self.sample_name[0:2]
+            self.sample_name = self.sample_name[:2]
 
         # load label
         label_path = self.label_path
@@ -123,12 +123,12 @@ class Feeder_kinetics(torch.utils.data.Dataset):
                     break
                 pose = skeleton_info['pose']
                 score = skeleton_info['score']
-                data_numpy[0, frame_index, :, m] = pose[0::2]
+                data_numpy[0, frame_index, :, m] = pose[::2]
                 data_numpy[1, frame_index, :, m] = pose[1::2]
                 data_numpy[2, frame_index, :, m] = score
 
         # centralization
-        data_numpy[0:2] = data_numpy[0:2] - 0.5
+        data_numpy[:2] = data_numpy[:2] - 0.5
         data_numpy[0][data_numpy[2] == 0] = 0
         data_numpy[1][data_numpy[2] == 0] = 0
 
@@ -136,7 +136,6 @@ class Feeder_kinetics(torch.utils.data.Dataset):
         label = video_info['label_index']
         assert (self.label[index] == label)
 
-        # processing
         if self.temporal_downsample_step != 1:
             if self.mode is 'train':
                 data_numpy = tools.downsample(data_numpy,
@@ -232,9 +231,7 @@ def test(data_path, label_path, vid=None, graph=None):
         edge = G.inward
         pose = []
         for m in range(M):
-            a = []
-            for i in range(len(edge)):
-                a.append(ax.plot(np.zeros(2), np.zeros(2), p_type[m])[0])
+            a = [ax.plot(np.zeros(2), np.zeros(2), p_type[m])[0] for _ in range(len(edge))]
             pose.append(a)
         ax.axis([-1, 1, -1, 1])
         for t in range(T):

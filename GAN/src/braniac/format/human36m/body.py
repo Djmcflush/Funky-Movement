@@ -48,8 +48,7 @@ class BodyFileReader(object):
         '''
         Iterate through each frame in the file, each frame can have more than one body.
         '''
-        for frame in self._frames:
-            yield frame
+        yield from self._frames
 
     def __getitem__(self, key):
         '''
@@ -69,18 +68,17 @@ class BodyFileReader(object):
             path(str): file path to the skeleton file.
         '''
         frames = []
-        if os.path.splitext(path)[1] == '.h5':
-            with h5py.File(path, 'r') as h5f:
-                poses = h5f['3D_positions'][:].T
-                for i in range(poses.shape[0]):
-                    body = Body()
-                    joints = poses[i]
-                    joint_count = joints.shape[0]//3
-                    joints = np.reshape(joints, (joint_count, 3))
-                    body.add_joints(joints)
-
-                    body_frame = [body]
-                    frames.append(body_frame)
-        else:
+        if os.path.splitext(path)[1] != '.h5':
             raise Exception('Unsupported file.')
+        with h5py.File(path, 'r') as h5f:
+            poses = h5f['3D_positions'][:].T
+            for i in range(poses.shape[0]):
+                body = Body()
+                joints = poses[i]
+                joint_count = joints.shape[0]//3
+                joints = np.reshape(joints, (joint_count, 3))
+                body.add_joints(joints)
+
+                body_frame = [body]
+                frames.append(body_frame)
         return frames

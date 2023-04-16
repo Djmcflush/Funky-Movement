@@ -10,7 +10,7 @@ def one_hot(indices, depth, axis=-1, dtype=np.float32):
     if axis < 0:
         axis = rank + axis + 1
 
-    ls = values.shape[0:axis]
+    ls = values.shape[:axis]
     rs = values.shape[axis:rank]
     targets = np.reshape(depth_range, (1,)*len(ls)+depth_range.shape+(1,)*len(rs))
     values = np.reshape(values, ls+(1,)+rs)
@@ -58,7 +58,7 @@ def attention(inputs,
               bias_initializer=None):
               
     num_neurons = inputs.shape[2].value
-    if attention_len == None:
+    if attention_len is None:
         attention_len = num_neurons
 
     # Trainable parameters

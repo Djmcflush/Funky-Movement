@@ -18,7 +18,7 @@ toolbar_width = 30
 
 def print_toolbar(rate, annotation=''):
     # setup toolbar
-    sys.stdout.write("{}[".format(annotation))
+    sys.stdout.write(f"{annotation}[")
     for i in range(toolbar_width):
         if i * 1.0 / toolbar_width > rate:
             sys.stdout.write(' ')
@@ -39,11 +39,9 @@ def gendata(data_path,
             part='eval'):
     if ignored_sample_path != None:
         with open(ignored_sample_path, 'r') as f:
-            ignored_samples = [
-                line.strip() + '.skeleton' for line in f.readlines()
-            ]
+            ignored_samples = [f'{line.strip()}.skeleton' for line in f.readlines()]
     else:
-        ignored_samples = [] 
+        ignored_samples = []
     sample_name = []
     sample_label = []
     for filename in os.listdir(data_path):
@@ -74,15 +72,16 @@ def gendata(data_path,
             sample_name.append(filename)
             sample_label.append(action_class - 1)
 
-    with open('{}/{}_label.pkl'.format(out_path, part), 'w') as f:
+    with open(f'{out_path}/{part}_label.pkl', 'w') as f:
         pickle.dump((sample_name,list(sample_label)), f)
     # np.save('{}/{}_label.npy'.format(out_path, part), sample_label)
 
     fp = open_memmap(
-        '{}/{}_data.npy'.format(out_path, part),
+        f'{out_path}/{part}_data.npy',
         dtype='float32',
         mode='w+',
-        shape=(len(sample_label), 3, max_frame, num_joint, max_body))
+        shape=(len(sample_label), 3, max_frame, num_joint, max_body),
+    )
 
     for i, s in enumerate(sample_name):
         print_toolbar(i * 1.0 / len(sample_label),
